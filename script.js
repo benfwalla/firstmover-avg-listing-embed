@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Log request data for debugging
         console.log('Sending request with data:', data);
         
-        // Use mock data for local testing due to CORS restrictions
+        // Decide whether to use mock data or real API
         const useMockData = false;
         
         if (useMockData) {
@@ -454,103 +454,91 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Using mock data. To use real API, set useMockData = false');
             }, 800);
         } else {
-            // Make real API request with JSONP approach to avoid CORS
-            const jsonpEndpoint = `${API_URL}?callback=handleApiResponse&data=${encodeURIComponent(JSON.stringify(data))}`;
+            // Use the user's provided fetch implementation
+            const myHeaders = new Headers();
+            myHeaders.append("Content-Type", "application/json");
             
-            // Create a script element to load the JSONP response
-            const script = document.createElement('script');
-            script.src = jsonpEndpoint;
-            
-            // Define the callback function that will be called by the JSONP response
-            window.handleApiResponse = function(response) {
-                // Process the response
-                processApiResponse(response);
-                
-                // Clean up
-                document.body.removeChild(script);
-                delete window.handleApiResponse;
+            const requestOptions = {
+              method: "POST",
+              headers: myHeaders,
+              body: JSON.stringify(data),
+              redirect: "follow"
             };
             
-            // Add error handling
-            script.onerror = function() {
-                // Fall back to mock data on error
-                console.error('JSONP request failed, falling back to mock data');
-                useMockDataFallback();
-                
-                // Clean up
-                if (script.parentNode) {
-                    document.body.removeChild(script);
-                }
-                delete window.handleApiResponse;
-            };
-            
-            // Add the script to the document to start the request
-            document.body.appendChild(script);
-            
-            // Return a dummy promise to maintain the structure
-            return new Promise((resolve) => {
-                // This promise is just a placeholder since we're using JSONP
-                resolve();
-            })
-            .catch(error => {
-                console.error('Error with API request:', error);
-                useMockDataFallback();
-            });
-            
-            // Function to process the API response
-            function processApiResponse(result) {
-                console.log('API result:', result);
-                
-                // The API returns a number directly or might return it in a property
-                let avgListings;
-                if (typeof result === 'number') {
-                    avgListings = result;
-                } else if (result && typeof result.avg_listings_per_day === 'number') {
-                    avgListings = result.avg_listings_per_day;
-                } else if (result && typeof result.result === 'number') {
-                    avgListings = result.result;
-                } else {
-                    // Try to find a number in the response
-                    const firstNumericValue = Object.values(result).find(val => typeof val === 'number');
-                    if (firstNumericValue !== undefined) {
-                        avgListings = firstNumericValue;
-                    } else {
-                        throw new Error('Could not find a numeric value in the API response');
-                    }
-                }
-                
-                // Display result
-                loadingSection.classList.add('loading-hidden');
-                resultSection.classList.remove('result-hidden');
-                avgListingsElement.textContent = avgListings.toFixed(1); // Always show with 1 decimal place
-            }
-            
-            // Function to fall back to mock data when API fails
-            function useMockDataFallback() {
-                console.log('Using mock data fallback due to API error');
-                
-                // Always use 4.2 for the memes
-                const mockResult = 4.2;
-                
-                // Display result
-                loadingSection.classList.add('loading-hidden');
-                resultSection.classList.remove('result-hidden');
-                avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
-                
-                // Add a note about mock data (only if it doesn't exist already)
-                const existingNote = document.querySelector('.mock-data-note');
-                if (!existingNote) {
-                    const mockDataNote = document.createElement('small');
-                    mockDataNote.className = 'mock-data-note';
-                    mockDataNote.textContent = '(Using sample data due to API connection issue)';
-                    mockDataNote.style.fontSize = '11px';
-                    mockDataNote.style.color = '#888';
-                    mockDataNote.style.display = 'block';
-                    mockDataNote.style.marginTop = '5px';
-                    mockDataNote.style.textAlign = 'center';
-                    resultSection.querySelector('.result-content').appendChild(mockDataNote);
-                }
-            }
+            fetch(API_URL, requestOptions)
+              .then(response => {
+                  console.log('API Response status:', response.status);
+                  
+                  if (!response.ok) {
+                      throw new Error(`API error (${response.status})`);
+                  }
+                  return response.text();
+              })
+              .then(result => {
+                  console.log('API result:', result);
+                  
+                  // Try to parse the result as JSON
+                  let parsedResult;
+                  try {
+                      parsedResult = JSON.parse(result);
+                  } catch (e) {
+                      // If it's not JSON, try to extract a number directly
+                      const numberMatch = result.match(/[\d\.]+/);
+                      if (numberMatch) {
+                          parsedResult = parseFloat(numberMatch[0]);
+                      } else {
+                          throw new Error('Could not parse API response');
+                      }
+                  }
+                  
+                  // The API returns a number directly or might return it in a property
+                  let avgListings;
+                  if (typeof parsedResult === 'number') {
+                      avgListings = parsedResult;
+                  } else if (parsedResult && typeof parsedResult.avg_listings_per_day === 'number') {
+                      avgListings = parsedResult.avg_listings_per_day;
+                  } else if (parsedResult && typeof parsedResult.result === 'number') {
+                      avgListings = parsedResult.result;
+                  } else {
+                      // Try to find a number in the response
+                      const firstNumericValue = Object.values(parsedResult).find(val => typeof val === 'number');
+                      if (firstNumericValue !== undefined) {
+                          avgListings = firstNumericValue;
+                      } else {
+                          throw new Error('Could not find a numeric value in the API response');
+                      }
+                  }
+                  
+                  // Display result
+                  loadingSection.classList.add('loading-hidden');
+                  resultSection.classList.remove('result-hidden');
+                  avgListingsElement.textContent = avgListings.toFixed(1); // Always show with 1 decimal place
+              })
+              .catch(error => {
+                  console.error('Error fetching data:', error);
+                  
+                  // Fall back to mock data on error
+                  const mockResult = 4.2;
+                  
+                  // Display result
+                  loadingSection.classList.add('loading-hidden');
+                  resultSection.classList.remove('result-hidden');
+                  avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
+                  
+                  // Add a note about mock data (only if it doesn't exist already)
+                  const existingNote = document.querySelector('.mock-data-note');
+                  if (!existingNote) {
+                      const mockDataNote = document.createElement('small');
+                      mockDataNote.className = 'mock-data-note';
+                      mockDataNote.textContent = '(Using sample data due to API connection issue)';
+                      mockDataNote.style.fontSize = '11px';
+                      mockDataNote.style.color = '#888';
+                      mockDataNote.style.display = 'block';
+                      mockDataNote.style.marginTop = '5px';
+                      mockDataNote.style.textAlign = 'center';
+                      resultSection.querySelector('.result-content').appendChild(mockDataNote);
+                  }
+              });
         }
     });
     
