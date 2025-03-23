@@ -424,20 +424,18 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('Sending request with data:', data);
         
         // Use mock data for local testing due to CORS restrictions
-        const useMockData = true;
+        const useMockData = false;
         
         if (useMockData) {
             // Simulate API call with mock data based on selected neighborhoods
             setTimeout(() => {
-                // Generate a realistic value based on the number of neighborhoods and bedrooms
-                const baseValue = neighborhoods.length * (bedrooms.includes(0) && bedrooms.includes(1) ? 2.5 : 1.5);
-                const randomFactor = 0.7 + Math.random() * 0.6; // Between 0.7 and 1.3
-                const mockResult = baseValue * randomFactor;
+                // Always use 4.2 for the memes
+                const mockResult = 4.2;
                 
                 // Display result
                 loadingSection.classList.add('loading-hidden');
                 resultSection.classList.remove('result-hidden');
-                avgListingsElement.textContent = mockResult % 1 === 0 ? mockResult.toFixed(0) : mockResult.toFixed(1);
+                avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
                 
                 // Add a note about mock data (only if it doesn't exist already)
                 const existingNote = document.querySelector('.mock-data-note');
@@ -500,7 +498,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Display result
                 loadingSection.classList.add('loading-hidden');
                 resultSection.classList.remove('result-hidden');
-                avgListingsElement.textContent = avgListings % 1 === 0 ? avgListings.toFixed(0) : avgListings.toFixed(1);
+                avgListingsElement.textContent = avgListings.toFixed(1); // Always show with 1 decimal place
             })
             .catch(error => {
                 console.error('Error fetching data:', error);
