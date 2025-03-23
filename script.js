@@ -454,27 +454,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('Using mock data. To use real API, set useMockData = false');
             }, 800);
         } else {
-            // Make real API request
-            fetch(API_URL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data),
-                mode: 'cors'
-            })
-            .then(response => {
-                // Log full response for debugging
-                console.log('API Response status:', response.status);
+            // Make real API request with JSONP approach to avoid CORS
+            const jsonpEndpoint = `${API_URL}?callback=handleApiResponse&data=${encodeURIComponent(JSON.stringify(data))}`;
+            
+            // Create a script element to load the JSONP response
+            const script = document.createElement('script');
+            script.src = jsonpEndpoint;
+            
+            // Define the callback function that will be called by the JSONP response
+            window.handleApiResponse = function(response) {
+                // Process the response
+                processApiResponse(response);
                 
-                if (!response.ok) {
-                    return response.text().then(text => {
-                        throw new Error(`API error (${response.status}): ${text}`);
-                    });
+                // Clean up
+                document.body.removeChild(script);
+                delete window.handleApiResponse;
+            };
+            
+            // Add error handling
+            script.onerror = function() {
+                // Fall back to mock data on error
+                console.error('JSONP request failed, falling back to mock data');
+                useMockDataFallback();
+                
+                // Clean up
+                if (script.parentNode) {
+                    document.body.removeChild(script);
                 }
-                return response.json();
+                delete window.handleApiResponse;
+            };
+            
+            // Add the script to the document to start the request
+            document.body.appendChild(script);
+            
+            // Return a dummy promise to maintain the structure
+            return new Promise((resolve) => {
+                // This promise is just a placeholder since we're using JSONP
+                resolve();
             })
-            .then(result => {
+            .catch(error => {
+                console.error('Error with API request:', error);
+                useMockDataFallback();
+            });
+            
+            // Function to process the API response
+            function processApiResponse(result) {
                 console.log('API result:', result);
                 
                 // The API returns a number directly or might return it in a property
@@ -499,13 +523,34 @@ document.addEventListener('DOMContentLoaded', function() {
                 loadingSection.classList.add('loading-hidden');
                 resultSection.classList.remove('result-hidden');
                 avgListingsElement.textContent = avgListings.toFixed(1); // Always show with 1 decimal place
-            })
-            .catch(error => {
-                console.error('Error fetching data:', error);
-                console.log('Request data was:', data);
+            }
+            
+            // Function to fall back to mock data when API fails
+            function useMockDataFallback() {
+                console.log('Using mock data fallback due to API error');
                 
-                showError('API connection issue. Please try again later or contact support.');
-            });
+                // Always use 4.2 for the memes
+                const mockResult = 4.2;
+                
+                // Display result
+                loadingSection.classList.add('loading-hidden');
+                resultSection.classList.remove('result-hidden');
+                avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
+                
+                // Add a note about mock data (only if it doesn't exist already)
+                const existingNote = document.querySelector('.mock-data-note');
+                if (!existingNote) {
+                    const mockDataNote = document.createElement('small');
+                    mockDataNote.className = 'mock-data-note';
+                    mockDataNote.textContent = '(Using sample data due to API connection issue)';
+                    mockDataNote.style.fontSize = '11px';
+                    mockDataNote.style.color = '#888';
+                    mockDataNote.style.display = 'block';
+                    mockDataNote.style.marginTop = '5px';
+                    mockDataNote.style.textAlign = 'center';
+                    resultSection.querySelector('.result-content').appendChild(mockDataNote);
+                }
+            }
         }
     });
     
