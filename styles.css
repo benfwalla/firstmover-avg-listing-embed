@@ -244,9 +244,9 @@ select[multiple] {
   font-weight: bold;
 }
 
-.submit-btn {
+.submit-btn, .reset-btn {
   display: inline-block;
-  padding: 8px 20px;
+  padding: 10px 24px;
   background-color: var(--primary-color);
   color: white;
   border: none;
@@ -254,8 +254,23 @@ select[multiple] {
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
-  margin: 0 auto;
+  margin: 0 8px;
   letter-spacing: 0.3px;
+  font-size: 15px;
+}
+
+.reset-btn {
+  background-color: white;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+.reset-hidden {
+  display: none;
+}
+
+.reset-btn:hover {
+  background-color: #f5f5f5;
 }
 
 .submit-btn:hover {
@@ -264,7 +279,7 @@ select[multiple] {
 
 .form-actions {
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
   margin-top: 16px;
 }
 
@@ -359,7 +374,7 @@ select[multiple] {
 }
 
 .option {
-  padding: 6px 10px;
+  padding: 8px 12px;
   cursor: pointer;
   transition: background-color 0.2s;
   font-size: 13px;
@@ -370,12 +385,6 @@ select[multiple] {
 }
 
 .option.selected {
-  font-weight: 500;
-  position: relative;
-}
-
-.option.selected::before {
-  content: '\2713';
-  position: absolute;
-  left: 5px;
+  font-weight: 700;
+  color: var(--text-color);
 }

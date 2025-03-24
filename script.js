@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Default values
+    const DEFAULT_NEIGHBORHOODS = ["Tribeca", "Kips Bay", "Gramercy Park"];
+    const DEFAULT_MIN_PRICE = 2500;
+    const DEFAULT_MAX_PRICE = 5000;
+    const DEFAULT_BEDROOMS = 'any';
+    const DEFAULT_BATHROOMS = 'any';
+    const DEFAULT_BROKER_FEES = 'fees_ok_if_10pct_cheaper';
+    
+    // Track if form has been modified from default state
+    let formModified = false;
     // Elements
     const form = document.getElementById('listing-form');
     const neighborhoodSearch = document.getElementById('neighborhood-search');
@@ -21,6 +31,33 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize bedrooms and bathrooms buttons
     initializeOptionButtons();
     
+    // Handle price inputs
+    document.getElementById('min-price').addEventListener('input', function() {
+        // Ensure min price doesn't exceed max price
+        const minPrice = parseInt(this.value);
+        const maxPrice = parseInt(document.getElementById('max-price').value);
+        
+        if (minPrice > maxPrice) {
+            document.getElementById('max-price').value = minPrice;
+        }
+        
+        // Check if form has been modified
+        updateResetButtonVisibility();
+    });
+    
+    document.getElementById('max-price').addEventListener('input', function() {
+        // Ensure max price isn't less than min price
+        const maxPrice = parseInt(this.value);
+        const minPrice = parseInt(document.getElementById('min-price').value);
+        
+        if (maxPrice < minPrice) {
+            document.getElementById('min-price').value = maxPrice;
+        }
+        
+        // Check if form has been modified
+        updateResetButtonVisibility();
+    });
+    
     // Load neighborhoods data
     fetch('neighborhoods.json')
         .then(response => response.json())
@@ -28,9 +65,8 @@ document.addEventListener('DOMContentLoaded', function() {
             allNeighborhoods = data;
             buildNeighborhoodTree(data);
             
-            // Pre-select default neighborhoods
-            const defaultNeighborhoods = ["Tribeca", "Kips Bay", "Gramercy Park"];
-            defaultNeighborhoods.forEach(name => {
+                    // Pre-select default neighborhoods
+            DEFAULT_NEIGHBORHOODS.forEach(name => {
                 const neighborhood = data.find(n => n.name === name);
                 if (neighborhood) {
                     addSelectedNeighborhood(neighborhood);
@@ -208,6 +244,9 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedNeighborhoodsList.push(neighborhood);
         updateSelectedNeighborhoodsInput();
         
+        // Check if form has been modified
+        updateResetButtonVisibility();
+        
         // Create UI element
         const item = document.createElement('div');
         item.className = 'selected-item';
@@ -229,8 +268,14 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedNeighborhoodsList = selectedNeighborhoodsList.filter(n => n.id !== id);
         updateSelectedNeighborhoodsInput();
         
-        const item = selectedNeighborhoods.querySelector(`.selected-item .remove[data-id="${id}"]`).parentNode;
-        item.remove();
+        const item = selectedNeighborhoods.querySelector(`.selected-item .remove[data-value="${id}"]`) || 
+                    selectedNeighborhoods.querySelector(`.selected-item .remove[data-id="${id}"]`);
+        if (item && item.parentNode) {
+            item.parentNode.remove();
+        }
+        
+        // Check if form has been modified
+        updateResetButtonVisibility();
     }
     
     // Update the hidden input with selected neighborhoods
@@ -238,6 +283,57 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedNeighborhoodsInput.value = JSON.stringify(
             selectedNeighborhoodsList.map(n => n.name)
         );
+    }
+    
+    // Function to check if form has been modified from defaults
+    function checkFormModified() {
+        // Check neighborhoods
+        if (selectedNeighborhoodsList.length !== DEFAULT_NEIGHBORHOODS.length) {
+            return true;
+        }
+        
+        // Check if all default neighborhoods are selected
+        const selectedNames = selectedNeighborhoodsList.map(n => n.name);
+        for (const name of DEFAULT_NEIGHBORHOODS) {
+            if (!selectedNames.includes(name)) {
+                return true;
+            }
+        }
+        
+        // Check price inputs
+        if (parseInt(document.getElementById('min-price').value) !== DEFAULT_MIN_PRICE ||
+            parseInt(document.getElementById('max-price').value) !== DEFAULT_MAX_PRICE) {
+            return true;
+        }
+        
+        // Check bedrooms
+        if (document.getElementById('bedrooms-min').value !== DEFAULT_BEDROOMS ||
+            document.getElementById('bedrooms-max').value !== DEFAULT_BEDROOMS) {
+            return true;
+        }
+        
+        // Check bathrooms
+        if (document.getElementById('min-bathroom').value !== DEFAULT_BATHROOMS) {
+            return true;
+        }
+        
+        // Check broker fees
+        if (document.getElementById('broker-fees').value !== DEFAULT_BROKER_FEES) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    // Function to update reset button visibility
+    function updateResetButtonVisibility() {
+        if (checkFormModified()) {
+            resetBtn.classList.remove('reset-hidden');
+            formModified = true;
+        } else {
+            resetBtn.classList.add('reset-hidden');
+            formModified = false;
+        }
     }
     
     // Initialize the buttons for bedrooms and bathrooms
@@ -250,6 +346,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         bedroomButtons.forEach(button => {
             button.addEventListener('click', function() {
+                // Check if form was already in default state before this change
+                const wasDefault = !formModified;
                 // Handle selection
                 const value = this.dataset.value;
                 
@@ -297,6 +395,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     bedroomsMinInput.value = numericBedrooms[0];
                     bedroomsMaxInput.value = numericBedrooms[numericBedrooms.length - 1];
                 }
+                
+                // If form was in default state, check if it's been modified
+                if (wasDefault) {
+                    updateResetButtonVisibility();
+                } else {
+                    // Form was already modified, keep reset button visible
+                    resetBtn.classList.remove('reset-hidden');
+                }
             });
         });
         
@@ -306,6 +412,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         bathroomButtons.forEach(button => {
             button.addEventListener('click', function() {
+                // Check if form was already in default state before this change
+                const wasDefault = !formModified;
                 // Handle selection
                 const value = this.dataset.value;
                 
@@ -317,6 +425,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Update hidden input
                 minBathroomInput.value = value;
+                
+                // If form was in default state, check if it's been modified
+                if (wasDefault) {
+                    updateResetButtonVisibility();
+                } else {
+                    // Form was already modified, keep reset button visible
+                    resetBtn.classList.remove('reset-hidden');
+                }
             });
         });
         
@@ -342,6 +458,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle option selection
         brokerFeesOptions.forEach(option => {
             option.addEventListener('click', function() {
+                // Check if form was already in default state before this change
+                const wasDefault = !formModified;
                 const value = this.dataset.value;
                 const text = this.textContent;
                 
@@ -355,8 +473,106 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Close dropdown
                 brokerFeesContainer.classList.remove('open');
+                
+                // If form was in default state, check if it's been modified
+                if (wasDefault) {
+                    updateResetButtonVisibility();
+                } else {
+                    // Form was already modified, keep reset button visible
+                    resetBtn.classList.remove('reset-hidden');
+                }
             });
         });
+    }
+    
+    // Get reset button element
+    const resetBtn = document.getElementById('reset-btn');
+    
+    // Initially hide the reset button
+    resetBtn.classList.add('reset-hidden');
+    
+    // Handle Reset button click
+    resetBtn.addEventListener('click', function() {
+        resetToDefaults();
+    });
+    
+    // Function to reset form to default values
+    function resetToDefaults() {
+        // Temporarily disable update checks while resetting
+        const originalAddSelectedNeighborhood = addSelectedNeighborhood;
+        
+        // Override the function to prevent visibility updates during reset
+        addSelectedNeighborhood = function(neighborhood) {
+            // Add to the selected list
+            selectedNeighborhoodsList.push(neighborhood);
+            updateSelectedNeighborhoodsInput();
+            
+            // Create UI element
+            const item = document.createElement('div');
+            item.className = 'selected-item';
+            
+            const text = document.createElement('span');
+            text.textContent = neighborhood.name;
+            
+            const remove = document.createElement('span');
+            remove.className = 'remove';
+            remove.setAttribute('data-id', neighborhood.id);
+            remove.textContent = '×';
+            remove.addEventListener('click', function() {
+                removeSelectedNeighborhood(neighborhood.id);
+            });
+            
+            item.appendChild(text);
+            item.appendChild(remove);
+            selectedNeighborhoods.appendChild(item);
+        };
+        
+        // Reset neighborhoods
+        selectedNeighborhoodsList = [];
+        selectedNeighborhoods.innerHTML = '';
+        
+        // Re-add default neighborhoods
+        DEFAULT_NEIGHBORHOODS.forEach(name => {
+            const neighborhood = allNeighborhoods.find(n => n.name === name);
+            if (neighborhood) {
+                addSelectedNeighborhood(neighborhood);
+            }
+        });
+        
+        // Reset price inputs
+        document.getElementById('min-price').value = DEFAULT_MIN_PRICE;
+        document.getElementById('max-price').value = DEFAULT_MAX_PRICE;
+        
+        // Reset bedrooms
+        const bedroomButtons = document.querySelectorAll('.bedrooms-group .option-button');
+        bedroomButtons.forEach(btn => btn.classList.remove('selected'));
+        document.querySelector('.bedrooms-group .option-button[data-value="any"]').classList.add('selected');
+        document.getElementById('bedrooms-min').value = DEFAULT_BEDROOMS;
+        document.getElementById('bedrooms-max').value = DEFAULT_BEDROOMS;
+        
+        // Reset bathrooms
+        const bathroomButtons = document.querySelectorAll('.bathrooms-group .option-button');
+        bathroomButtons.forEach(btn => btn.classList.remove('selected'));
+        document.querySelector('.bathrooms-group .option-button[data-value="any"]').classList.add('selected');
+        document.getElementById('min-bathroom').value = DEFAULT_BATHROOMS;
+        
+        // Reset broker fees
+        const brokerFeesOptions = document.querySelectorAll('#broker-fees-dropdown .option');
+        brokerFeesOptions.forEach(opt => opt.classList.remove('selected'));
+        document.querySelector('#broker-fees-dropdown .option[data-value="' + DEFAULT_BROKER_FEES + '"]').classList.add('selected');
+        document.getElementById('broker-fees').value = DEFAULT_BROKER_FEES;
+        document.getElementById('broker-fees-display').textContent = document.querySelector('#broker-fees-dropdown .option[data-value="' + DEFAULT_BROKER_FEES + '"]').textContent;
+        
+        // Hide results
+        resultSection.classList.add('result-hidden');
+        errorSection.classList.add('error-hidden');
+        
+        // Hide reset button
+        resetBtn.classList.add('reset-hidden');
+        formModified = false;
+        
+        // Restore original function
+        addSelectedNeighborhood = originalAddSelectedNeighborhood;
     }
     
     // Handle form submission
