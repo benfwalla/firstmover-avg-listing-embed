@@ -423,37 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Log request data for debugging
         console.log('Sending request with data:', data);
         
-        // Decide whether to use mock data or real API
-        const useMockData = false;
-        
-        if (useMockData) {
-            // Simulate API call with mock data based on selected neighborhoods
-            setTimeout(() => {
-                // Always use 4.2 for the memes
-                const mockResult = 4.2;
-                
-                // Display result
-                loadingSection.classList.add('loading-hidden');
-                resultSection.classList.remove('result-hidden');
-                avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
-                
-                // Add a note about mock data (only if it doesn't exist already)
-                const existingNote = document.querySelector('.mock-data-note');
-                if (!existingNote) {
-                    const mockDataNote = document.createElement('small');
-                    mockDataNote.className = 'mock-data-note';
-                    mockDataNote.textContent = '(Using sample data for demonstration)';
-                    mockDataNote.style.fontSize = '11px';
-                    mockDataNote.style.color = '#888';
-                    mockDataNote.style.display = 'block';
-                    mockDataNote.style.marginTop = '5px';
-                    mockDataNote.style.textAlign = 'center';
-                    resultSection.querySelector('.result-content').appendChild(mockDataNote);
-                }
-                
-                console.log('Using mock data. To use real API, set useMockData = false');
-            }, 800);
-        } else {
+        // Use the API implementation
             // Use the user's provided fetch implementation
             const myHeaders = new Headers();
             myHeaders.append("Content-Type", "application/json");
@@ -516,30 +486,8 @@ document.addEventListener('DOMContentLoaded', function() {
               })
               .catch(error => {
                   console.error('Error fetching data:', error);
-                  
-                  // Fall back to mock data on error
-                  const mockResult = 4.2;
-                  
-                  // Display result
-                  loadingSection.classList.add('loading-hidden');
-                  resultSection.classList.remove('result-hidden');
-                  avgListingsElement.textContent = mockResult.toFixed(1); // Always show with 1 decimal place
-                  
-                  // Add a note about mock data (only if it doesn't exist already)
-                  const existingNote = document.querySelector('.mock-data-note');
-                  if (!existingNote) {
-                      const mockDataNote = document.createElement('small');
-                      mockDataNote.className = 'mock-data-note';
-                      mockDataNote.textContent = '(Using sample data due to API connection issue)';
-                      mockDataNote.style.fontSize = '11px';
-                      mockDataNote.style.color = '#888';
-                      mockDataNote.style.display = 'block';
-                      mockDataNote.style.marginTop = '5px';
-                      mockDataNote.style.textAlign = 'center';
-                      resultSection.querySelector('.result-content').appendChild(mockDataNote);
-                  }
+                  showError('Error connecting to API. Please try again later.');
               });
-        }
     });
     
     function showError(message) {
