@@ -317,14 +317,39 @@ document.addEventListener('DOMContentLoaded', function() {
         // If it has children, indicate this is a group selection
         const childCount = childNeighborhoods.length;
         
-        // Get a list of child neighborhood names for the tooltip
-        let childNames = '';
+        // Get a list of child neighborhood names for the tooltip, prioritizing direct children
+        let tooltipText = '';
         if (childCount > 0) {
-            childNames = childNeighborhoods.map(child => child.name).join(', ');
+            // Find direct children first
+            const directChildren = allNeighborhoods.filter(n => n.parent_id === neighborhood.id);
+            
+            // Prioritize immediate children, then show others if space allows
+            let neighbourhoodsToShow = [...directChildren];
+            
+            // If we have less than 5 direct children, add some grandchildren
+            if (directChildren.length < 5 && childNeighborhoods.length > directChildren.length) {
+                // Get grandchildren (remove direct children from the full list)
+                const grandchildren = childNeighborhoods.filter(n => !directChildren.some(dc => dc.id === n.id));
+                // Add enough grandchildren to reach 5 items total or as many as available
+                const additionalCount = Math.min(5 - directChildren.length, grandchildren.length);
+                neighbourhoodsToShow = [...directChildren, ...grandchildren.slice(0, additionalCount)];
+            }
+            
+            // Limit to 5 items maximum
+            const displayLimit = 5;
+            const namesToShow = neighbourhoodsToShow.slice(0, displayLimit).map(n => n.name);
+            
+            // Calculate how many more are not shown
+            const remaining = childCount - namesToShow.length;
+            
+            tooltipText = `Includes: ${namesToShow.join(', ')}`;
+            if (remaining > 0) {
+                tooltipText += ` and ${remaining} more sub-neighborhoods`;
+            }
         }
         
         const childLabel = childCount > 0 ? 
-            `<span class="child-indicator" data-tooltip="Includes: ${childNames}">+${childCount}</span>` : '';
+            `<span class="child-indicator" data-tooltip="${tooltipText}">+${childCount}</span>` : '';
             
         item.innerHTML = `
             ${neighborhood.name} ${childLabel}
