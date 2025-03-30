@@ -187,21 +187,54 @@ document.addEventListener('DOMContentLoaded', function() {
         const matches = allNeighborhoods.filter(n => 
             n.name.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // Show matching neighborhoods and their parents
+        // Create a set to track IDs of neighborhoods to display
+        const neighborhoodsToShow = new Set();
+        
+        // Function to recursively collect all child IDs for a given neighborhood
+        function collectAllChildren(neighborhoodId) {
+            // Find direct children
+            const children = allNeighborhoods.filter(n => n.parent_id === neighborhoodId);
+            
+            // Add each child and its descendants
+            children.forEach(child => {
+                neighborhoodsToShow.add(child.id);
+                collectAllChildren(child.id); // Recursively find grandchildren, etc.
+            });
+        }
+        
+        // For each match, add it and all its children to our display set
         matches.forEach(match => {
-            const matchElement = document.querySelector(`.neighborhood-category[data-id="${match.id}"]`);
-            if (matchElement) {
+            neighborhoodsToShow.add(match.id);
+            collectAllChildren(match.id);
+        });
+        
+        // Show all matched neighborhoods, their children, and parent chains
+        neighborhoodsToShow.forEach(id => {
+            const element = document.querySelector(`.neighborhood-category[data-id="${id}"]`);
+            if (element) {
                 // Show this element
-                matchElement.style.display = '';
+                element.style.display = '';
+                element.classList.add('expanded');
                 
                 // Show parent chain
-                showParentChain(match.parent_id);
-                
-                // Expand parent categories to show matches
-                const parentElement = matchElement.closest('.neighborhood-subcategory');
-                if (parentElement) {
-                    parentElement.classList.add('visible');
+                const neighborhood = allNeighborhoods.find(n => n.id === id);
+                if (neighborhood) {
+                    showParentChain(neighborhood.parent_id);
                 }
+                
+                // Find any subcategories immediately after this element
+                const nextElement = element.nextElementSibling;
+                if (nextElement && nextElement.classList.contains('neighborhood-subcategory')) {
+                    nextElement.classList.add('visible');
+                }
+            }
+        });
+        
+        // Expand parent categories for all matches
+        document.querySelectorAll('.neighborhood-category.expanded').forEach(el => {
+            const parentElement = el.closest('.neighborhood-subcategory');
+            if (parentElement) {
+                parentElement.classList.add('visible');
             }
         });
         
@@ -220,12 +253,20 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const parentElement = document.querySelector(`.neighborhood-category[data-id="${parent.id}"]`);
         if (parentElement) {
+            // Show this parent element
             parentElement.style.display = '';
+            parentElement.classList.add('expanded');
             
-            // Show subcategory container
+            // Show subcategory container for this parent
             const nextElement = parentElement.nextElementSibling;
             if (nextElement && nextElement.classList.contains('neighborhood-subcategory')) {
                 nextElement.classList.add('visible');
+            }
+            
+            // Make sure this parent element is visible in its container
+            const parentContainer = parentElement.closest('.neighborhood-subcategory');
+            if (parentContainer) {
+                parentContainer.classList.add('visible');
             }
             
             // Continue up the chain
@@ -596,23 +637,41 @@ document.addEventListener('DOMContentLoaded', function() {
         // Convert bedroom values for API
         let bedrooms = [];
         if (bedroomsMin === 'any') {
-            // Include all bedrooms (0-4+)
-            bedrooms = [0, 1, 2, 3, 4];
+            // Include all bedrooms (1 through 10 for "Any" option)
+            bedrooms = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
         } else {
             // Get all selected bedroom buttons
             const selectedButtons = document.querySelectorAll('.bedrooms-group .option-button.selected');
             
             // If only one button is selected and it's not 'any'
-            if (selectedButtons.length === 1 && selectedButtons[0].dataset.value !== 'any') {
-                // Single bedroom selection
-                bedrooms = [parseInt(selectedButtons[0].dataset.value)];
+            if (selectedButtons.length === 1) {
+                const btnValue = selectedButtons[0].dataset.value;
+                // Handle 4+ option specially
+                if (btnValue === '4') {
+                    // For 4+ bedrooms, include 4 through 10
+                    bedrooms = [4, 5, 6, 7, 8, 9, 10];
+                } else {
+                    // Single bedroom selection (Studio=0, or 1,2,3)
+                    bedrooms = [parseInt(btnValue)];
+                }
             } else if (parseInt(bedroomsMin) === parseInt(bedroomsMax)) {
                 // Single bedroom selection from range
-                bedrooms = [parseInt(bedroomsMin)];
+                const bedroomValue = parseInt(bedroomsMin);
+                // Handle 4+ option specially
+                if (bedroomValue === 4) {
+                    // For 4+ bedrooms, include 4 through 10
+                    bedrooms = [4, 5, 6, 7, 8, 9, 10];
+                } else {
+                    bedrooms = [bedroomValue];
+                }
             } else {
                 // Range of bedrooms
                 for (let i = parseInt(bedroomsMin); i <= parseInt(bedroomsMax); i++) {
                     bedrooms.push(i);
+                }
+                // If range ends with 4+, add 5 through 10
+                if (parseInt(bedroomsMax) === 4) {
+                    bedrooms.push(5, 6, 7, 8, 9, 10);
                 }
             }
         }
@@ -678,6 +737,13 @@ document.addEventListener('DOMContentLoaded', function() {
                   }
                   
                   // The API returns a number directly or might return it in a property
+                  // Check if the API response is null (no listings met the search criteria)
+                  if (parsedResult === null) {
+                      loadingSection.classList.add('loading-hidden');
+                      showError('No listings found that match your search criteria. Please try different parameters.');
+                      return;
+                  }
+                  
                   let avgListings;
                   if (typeof parsedResult === 'number') {
                       avgListings = parsedResult;
