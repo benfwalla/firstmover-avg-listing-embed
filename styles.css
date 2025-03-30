@@ -193,6 +193,7 @@ select[multiple] {
   transition: background-color 0.2s;
   user-select: none;
   font-size: 13px;
+  position: relative;
 }
 
 .neighborhood-category:hover {
@@ -201,11 +202,17 @@ select[multiple] {
 
 .neighborhood-category.has-children {
   font-weight: 500;
+  position: relative;
+  padding-right: 20px; /* Make room for the arrow */
 }
 
 .neighborhood-category.has-children::after {
   content: '▸';
-  float: right;
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none; /* Allow clicks to pass through */
 }
 
 .neighborhood-category.expanded::after {

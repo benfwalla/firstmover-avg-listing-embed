@@ -125,21 +125,15 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add children recursively to build the tree
     function addChildrenRecursively(parent, parentElement, data) {
-        // First determine if this neighborhood has *actual* children with their own subcategories
-        // This is needed to properly handle cases where neighborhoods are misclassified
+        // Check if this neighborhood has any children
         const children = data.filter(item => item.parent_id === parent.id);
         
-        // Get grandchildren count - this helps us identify if a child itself has children
-        const hasGrandchildren = children.some(child => 
-            data.some(item => item.parent_id === child.id)
-        );
+        // Make all neighborhoods selectable for consistency
+        parentElement.classList.add('selectable');
         
         if (children.length > 0) {
-            // Only add the has-children class and expand/collapse UI if this neighborhood
-            // has grandchildren or multiple children (true parent behavior)
-            if (hasGrandchildren || children.length > 1) {
-                parentElement.classList.add('has-children');
-            }
+            // Only add has-children class if it has at least one child
+            parentElement.classList.add('has-children');
             
             const subcategoryContainer = document.createElement('div');
             subcategoryContainer.className = 'neighborhood-subcategory';
@@ -153,37 +147,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 addChildrenRecursively(child, childElement, data);
             });
             
-            // Only add expand/collapse functionality if this is a true parent with the has-children class
-            if (hasGrandchildren || children.length > 1) {
-                parentElement.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    
-                    // Check if we're clicking the selection part or the expand/collapse indicator
-                    const isExpandClick = e.offsetX > (this.offsetWidth - 20); // Roughly where the triangle is
-                    
-                    if (isExpandClick) {
-                        // Expand/collapse children
-                        this.classList.toggle('expanded');
-                        subcategoryContainer.classList.toggle('visible');
-                    } else {
-                        // Select this neighborhood (and implicitly all its children)
-                        addSelectedNeighborhood(parent);
-                        neighborhoodDropdown.classList.remove('open');
-                    }
-                });
-            } else {
-                // Simple click for neighborhoods with just one child and no grandchildren
-                parentElement.addEventListener('click', function(e) {
-                    e.stopPropagation();
+            // Add expand/collapse functionality for neighborhoods with children
+            parentElement.addEventListener('click', function(e) {
+                e.stopPropagation();
+                
+                // Check if we're clicking the selection part or the expand/collapse indicator
+                const isExpandClick = e.offsetX > (this.offsetWidth - 20); // Roughly where the triangle is
+                
+                if (isExpandClick) {
+                    // Expand/collapse children
+                    this.classList.toggle('expanded');
+                    subcategoryContainer.classList.toggle('visible');
+                } else {
+                    // Select this neighborhood (and implicitly all its children)
                     addSelectedNeighborhood(parent);
                     neighborhoodDropdown.classList.remove('open');
-                });
-            }
-            
-            // Add a visual indicator to show selection ability
-            parentElement.classList.add('selectable');
+                }
+            });
         } else {
-            // If it's a leaf node (actual neighborhood), add click handler to select it
+            // If it's a leaf node (actual neighborhood), add simple click handler
             parentElement.addEventListener('click', function(e) {
                 e.stopPropagation();
                 addSelectedNeighborhood(parent);
