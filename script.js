@@ -307,8 +307,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // If it has children, indicate this is a group selection
         const childCount = childNeighborhoods.length;
+        
+        // Get a list of child neighborhood names for the tooltip
+        let childNames = '';
+        if (childCount > 0) {
+            childNames = childNeighborhoods.map(child => child.name).join(', ');
+        }
+        
         const childLabel = childCount > 0 ? 
-            `<span class="child-indicator" title="Includes ${childCount} sub-neighborhoods">+${childCount}</span>` : '';
+            `<span class="child-indicator" data-tooltip="Includes: ${childNames}">+${childCount}</span>` : '';
             
         item.innerHTML = `
             ${neighborhood.name} ${childLabel}
