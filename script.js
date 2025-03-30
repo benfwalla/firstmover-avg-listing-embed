@@ -125,10 +125,21 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Add children recursively to build the tree
     function addChildrenRecursively(parent, parentElement, data) {
+        // First determine if this neighborhood has *actual* children with their own subcategories
+        // This is needed to properly handle cases where neighborhoods are misclassified
         const children = data.filter(item => item.parent_id === parent.id);
         
+        // Get grandchildren count - this helps us identify if a child itself has children
+        const hasGrandchildren = children.some(child => 
+            data.some(item => item.parent_id === child.id)
+        );
+        
         if (children.length > 0) {
-            parentElement.classList.add('has-children');
+            // Only add the has-children class and expand/collapse UI if this neighborhood
+            // has grandchildren or multiple children (true parent behavior)
+            if (hasGrandchildren || children.length > 1) {
+                parentElement.classList.add('has-children');
+            }
             
             const subcategoryContainer = document.createElement('div');
             subcategoryContainer.className = 'neighborhood-subcategory';
@@ -142,12 +153,35 @@ document.addEventListener('DOMContentLoaded', function() {
                 addChildrenRecursively(child, childElement, data);
             });
             
-            // Toggle children visibility when parent is clicked
-            parentElement.addEventListener('click', function(e) {
-                e.stopPropagation();
-                this.classList.toggle('expanded');
-                subcategoryContainer.classList.toggle('visible');
-            });
+            // Only add expand/collapse functionality if this is a true parent with the has-children class
+            if (hasGrandchildren || children.length > 1) {
+                parentElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    
+                    // Check if we're clicking the selection part or the expand/collapse indicator
+                    const isExpandClick = e.offsetX > (this.offsetWidth - 20); // Roughly where the triangle is
+                    
+                    if (isExpandClick) {
+                        // Expand/collapse children
+                        this.classList.toggle('expanded');
+                        subcategoryContainer.classList.toggle('visible');
+                    } else {
+                        // Select this neighborhood (and implicitly all its children)
+                        addSelectedNeighborhood(parent);
+                        neighborhoodDropdown.classList.remove('open');
+                    }
+                });
+            } else {
+                // Simple click for neighborhoods with just one child and no grandchildren
+                parentElement.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    addSelectedNeighborhood(parent);
+                    neighborhoodDropdown.classList.remove('open');
+                });
+            }
+            
+            // Add a visual indicator to show selection ability
+            parentElement.classList.add('selectable');
         } else {
             // If it's a leaf node (actual neighborhood), add click handler to select it
             parentElement.addEventListener('click', function(e) {
@@ -274,41 +308,89 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Get all child neighborhoods (recursive)
+    function getAllChildNeighborhoods(neighborhoodId) {
+        const result = [];
+        
+        // Find direct children
+        const directChildren = allNeighborhoods.filter(n => n.parent_id === neighborhoodId);
+        
+        // Add each child and recursively get its children
+        directChildren.forEach(child => {
+            result.push(child);
+            const childrenOfChild = getAllChildNeighborhoods(child.id);
+            result.push(...childrenOfChild);
+        });
+        
+        return result;
+    }
+    
     // Add a neighborhood to the selected list
     function addSelectedNeighborhood(neighborhood) {
-        // Check if already selected
+        // Check if already selected (either directly or as part of a parent)
         if (selectedNeighborhoodsList.some(n => n.id === neighborhood.id)) {
             return;
         }
         
-        // Add to the selected list
-        selectedNeighborhoodsList.push(neighborhood);
+        // Get all child neighborhoods
+        const childNeighborhoods = getAllChildNeighborhoods(neighborhood.id);
+        
+        // Create a virtual selection that includes this neighborhood and all its children
+        const virtualSelection = [neighborhood, ...childNeighborhoods];
+        
+        // Get currently selected neighborhood IDs for quick lookup
+        const currentlySelectedIds = new Set(selectedNeighborhoodsList.map(n => n.id));
+        
+        // Filter out any neighborhoods that are already selected
+        const newSelections = virtualSelection.filter(n => !currentlySelectedIds.has(n.id));
+        
+        // Add to the selected list (will be sent to API)
+        selectedNeighborhoodsList.push(...newSelections);
         updateSelectedNeighborhoodsInput();
         
         // Check if form has been modified
         updateResetButtonVisibility();
         
-        // Create UI element
+        // Create UI element (only show the parent in the UI)
         const item = document.createElement('div');
         item.className = 'selected-item';
+        
+        // If it has children, indicate this is a group selection
+        const childCount = childNeighborhoods.length;
+        const childLabel = childCount > 0 ? 
+            `<span class="child-indicator" title="Includes ${childCount} sub-neighborhoods">+${childCount}</span>` : '';
+            
         item.innerHTML = `
-            ${neighborhood.name}
-            <span class="remove" data-id="${neighborhood.id}">×</span>
+            ${neighborhood.name} ${childLabel}
+            <span class="remove" data-id="${neighborhood.id}" data-is-parent="${childCount > 0}">×</span>
         `;
         selectedNeighborhoods.appendChild(item);
         
         // Add remove event
         item.querySelector('.remove').addEventListener('click', function() {
             const idToRemove = parseInt(this.getAttribute('data-id'));
-            removeSelectedNeighborhood(idToRemove);
+            const isParent = this.getAttribute('data-is-parent') === 'true';
+            removeSelectedNeighborhood(idToRemove, isParent);
         });
     }
     
     // Remove a neighborhood from the selected list
-    function removeSelectedNeighborhood(id) {
-        selectedNeighborhoodsList = selectedNeighborhoodsList.filter(n => n.id !== id);
+    function removeSelectedNeighborhood(id, isParent = false) {
+        if (isParent) {
+            // If removing a parent, also remove all its children
+            const childrenToRemove = getAllChildNeighborhoods(id);
+            const idsToRemove = new Set([id, ...childrenToRemove.map(child => child.id)]);
+            
+            // Filter out this neighborhood and all its children
+            selectedNeighborhoodsList = selectedNeighborhoodsList.filter(n => !idsToRemove.has(n.id));
+        } else {
+            // Just remove the single neighborhood
+            selectedNeighborhoodsList = selectedNeighborhoodsList.filter(n => n.id !== id);
+        }
+        
         updateSelectedNeighborhoodsInput();
         
+        // Remove the UI element
         const item = selectedNeighborhoods.querySelector(`.selected-item .remove[data-value="${id}"]`) || 
                     selectedNeighborhoods.querySelector(`.selected-item .remove[data-id="${id}"]`);
         if (item && item.parentNode) {

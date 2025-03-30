@@ -212,6 +212,10 @@ select[multiple] {
   content: '▾';
 }
 
+.neighborhood-category.selectable {
+  cursor: pointer;
+}
+
 .neighborhood-subcategory {
   padding-left: 30px;
   display: none;
@@ -242,6 +246,16 @@ select[multiple] {
   margin-left: 5px;
   cursor: pointer;
   font-weight: bold;
+}
+
+.selected-item .child-indicator {
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 10px;
+  padding: 1px 5px;
+  font-size: 10px;
+  margin-left: 4px;
+  font-weight: 600;
 }
 
 .submit-btn, .reset-btn {
