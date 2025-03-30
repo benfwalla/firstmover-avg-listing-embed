@@ -304,6 +304,9 @@ document.addEventListener('DOMContentLoaded', function() {
         selectedNeighborhoodsList.push(...newSelections);
         updateSelectedNeighborhoodsInput();
         
+        // Update submit button state
+        updateSubmitButtonState();
+        
         // Check if form has been modified
         updateResetButtonVisibility();
         
@@ -360,11 +363,12 @@ document.addEventListener('DOMContentLoaded', function() {
             item.parentNode.remove();
         }
         
+        // Update submit button state BEFORE checking form modified
+        // This ensures the submit button updates immediately when neighborhoods change
+        updateSubmitButtonState();
+        
         // Check if form has been modified
         updateResetButtonVisibility();
-        
-        // Update submit button state (disable if no neighborhoods are selected)
-        updateSubmitButtonState();
     }
     
     // Update the hidden input with selected neighborhoods
@@ -755,16 +759,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Restore original function
         addSelectedNeighborhood = originalAddSelectedNeighborhood;
         
-        // Re-populate with default neighborhoods
-        // This will make the submit button enabled again
-        DEFAULT_NEIGHBORHOODS.forEach(name => {
-            const neighborhood = allNeighborhoods.find(n => n.name === name);
-            if (neighborhood) {
-                addSelectedNeighborhood(neighborhood);
-            }
-        });
-        
-        // Ensure submit button is enabled
+        // Leave neighborhoods empty (no default neighborhoods)
+        // Submit button should remain disabled until user selects neighborhoods
         updateSubmitButtonState();
     }
     
