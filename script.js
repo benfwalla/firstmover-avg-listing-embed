@@ -77,12 +77,14 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('Error loading neighborhoods:', error);
         });
     
-    // Handle neighborhood dropdown toggle
+    // Handle neighborhood dropdown toggle - only focus on the search field
     document.getElementById('show-neighborhood-dropdown').addEventListener('click', function() {
-        neighborhoodDropdown.classList.toggle('open');
-        if (neighborhoodDropdown.classList.contains('open')) {
-            neighborhoodSearch.focus();
-        }
+        // Just focus on the search input without showing the dropdown
+        neighborhoodSearch.focus();
+        // Close the dropdown if it's open
+        neighborhoodDropdown.classList.remove('open');
+        // Clear any existing search term
+        neighborhoodSearch.value = '';
     });
     
     // Close dropdown when clicking outside
@@ -98,9 +100,16 @@ document.addEventListener('DOMContentLoaded', function() {
         filterNeighborhoods(searchTerm);
     });
     
-    // Focus on search input opens dropdown
+    // Focus on search input ensures any previous results are cleared
     neighborhoodSearch.addEventListener('focus', function() {
-        neighborhoodDropdown.classList.add('open');
+        // Only show dropdown if there's actual search text
+        if (this.value.length > 0) {
+            filterNeighborhoods(this.value);
+        } else {
+            // Otherwise ensure dropdown is closed with no results
+            neighborhoodDropdown.classList.remove('open');
+            neighborhoodList.innerHTML = '';
+        }
     });
     
     // Build neighborhood tree from JSON data
@@ -121,6 +130,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add children recursively
             addChildrenRecursively(item, categoryElement, data);
         });
+
+        // Add event listeners for all category elements
+        document.querySelectorAll('.neighborhood-category').forEach(element => {
+            element.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const id = parseInt(this.dataset.id);
+                const neighborhood = allNeighborhoods.find(n => n.id === id);
+                if (neighborhood) {
+                    addSelectedNeighborhood(neighborhood);
+                    neighborhoodDropdown.classList.remove('open');
+                }
+            });
+        });
     }
     
     // Add children recursively to build the tree
@@ -128,48 +150,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Check if this neighborhood has any children
         const children = data.filter(item => item.parent_id === parent.id);
         
-        // Make all neighborhoods selectable for consistency
+        // Make all neighborhoods selectable
         parentElement.classList.add('selectable');
         
         if (children.length > 0) {
-            // Only add has-children class if it has at least one child
+            // Add parent class for styling
             parentElement.classList.add('has-children');
             
+            // Create container for children (hidden by default)
             const subcategoryContainer = document.createElement('div');
             subcategoryContainer.className = 'neighborhood-subcategory';
             parentElement.insertAdjacentElement('afterend', subcategoryContainer);
             
+            // Add all children
             children.forEach(child => {
                 const childElement = createCategoryElement(child);
                 subcategoryContainer.appendChild(childElement);
                 
                 // Recursively add children of this child
                 addChildrenRecursively(child, childElement, data);
-            });
-            
-            // Add expand/collapse functionality for neighborhoods with children
-            parentElement.addEventListener('click', function(e) {
-                e.stopPropagation();
-                
-                // Check if we're clicking the selection part or the expand/collapse indicator
-                const isExpandClick = e.offsetX > (this.offsetWidth - 20); // Roughly where the triangle is
-                
-                if (isExpandClick) {
-                    // Expand/collapse children
-                    this.classList.toggle('expanded');
-                    subcategoryContainer.classList.toggle('visible');
-                } else {
-                    // Select this neighborhood (and implicitly all its children)
-                    addSelectedNeighborhood(parent);
-                    neighborhoodDropdown.classList.remove('open');
-                }
-            });
-        } else {
-            // If it's a leaf node (actual neighborhood), add simple click handler
-            parentElement.addEventListener('click', function(e) {
-                e.stopPropagation();
-                addSelectedNeighborhood(parent);
-                neighborhoodDropdown.classList.remove('open');
             });
         }
     }
@@ -185,78 +184,47 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Filter neighborhoods based on search term
     function filterNeighborhoods(searchTerm) {
-        const categories = document.querySelectorAll('.neighborhood-category');
-        const subcategories = document.querySelectorAll('.neighborhood-subcategory');
+        // Clear existing search results first
+        neighborhoodList.innerHTML = '';
         
-        // Reset visibility
-        categories.forEach(cat => cat.style.display = '');
-        subcategories.forEach(subcat => subcat.classList.remove('visible'));
-        
-        if (!searchTerm) {
+        // If search term is empty, close dropdown
+        if (!searchTerm || searchTerm.length < 1) {
+            neighborhoodDropdown.classList.remove('open');
             return;
         }
         
-        // Hide all categories initially
-        categories.forEach(cat => cat.style.display = 'none');
+        // Find matching neighborhoods by name (case insensitive)
+        const matches = allNeighborhoods.filter(neighborhood => 
+            neighborhood.name.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        // Find matching neighborhoods
-        const matches = allNeighborhoods.filter(n => 
-            n.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        
-        // Create a set to track IDs of neighborhoods to display
-        const neighborhoodsToShow = new Set();
-        
-        // Function to recursively collect all child IDs for a given neighborhood
-        function collectAllChildren(neighborhoodId) {
-            // Find direct children
-            const children = allNeighborhoods.filter(n => n.parent_id === neighborhoodId);
-            
-            // Add each child and its descendants
-            children.forEach(child => {
-                neighborhoodsToShow.add(child.id);
-                collectAllChildren(child.id); // Recursively find grandchildren, etc.
-            });
-        }
-        
-        // For each match, add it and all its children to our display set
-        matches.forEach(match => {
-            neighborhoodsToShow.add(match.id);
-            collectAllChildren(match.id);
-        });
-        
-        // Show all matched neighborhoods, their children, and parent chains
-        neighborhoodsToShow.forEach(id => {
-            const element = document.querySelector(`.neighborhood-category[data-id="${id}"]`);
-            if (element) {
-                // Show this element
-                element.style.display = '';
-                element.classList.add('expanded');
-                
-                // Show parent chain
-                const neighborhood = allNeighborhoods.find(n => n.id === id);
-                if (neighborhood) {
-                    showParentChain(neighborhood.parent_id);
-                }
-                
-                // Find any subcategories immediately after this element
-                const nextElement = element.nextElementSibling;
-                if (nextElement && nextElement.classList.contains('neighborhood-subcategory')) {
-                    nextElement.classList.add('visible');
-                }
-            }
-        });
-        
-        // Expand parent categories for all matches
-        document.querySelectorAll('.neighborhood-category.expanded').forEach(el => {
-            const parentElement = el.closest('.neighborhood-subcategory');
-            if (parentElement) {
-                parentElement.classList.add('visible');
-            }
-        });
-        
-        // Open the dropdown if we have matches
+        // Create direct search results
         if (matches.length > 0) {
+            // Open dropdown to show results
             neighborhoodDropdown.classList.add('open');
+            
+            // Add each match directly to the search results
+            matches.forEach(match => {
+                const element = document.createElement('div');
+                element.className = 'neighborhood-category selectable';
+                element.textContent = match.name;
+                element.dataset.id = match.id;
+                
+                // Add click handler
+                element.addEventListener('click', function() {
+                    // Add the neighborhood and its children to selection
+                    addSelectedNeighborhood(match);
+                    // Close dropdown
+                    neighborhoodDropdown.classList.remove('open');
+                    // Clear search
+                    neighborhoodSearch.value = '';
+                });
+                
+                // Add to results
+                neighborhoodList.appendChild(element);
+            });
+        } else {
+            // No matches found
+            neighborhoodDropdown.classList.remove('open');
         }
     }
     
