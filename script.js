@@ -72,6 +72,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     addSelectedNeighborhood(neighborhood);
                 }
             });
+            
+            // Now that neighborhoods are loaded, update submit button state
+            updateSubmitButtonState();
+            
+            // Always show reset button on startup
+            resetBtn.classList.remove('reset-hidden');
         })
         .catch(error => {
             console.error('Error loading neighborhoods:', error);
@@ -356,6 +362,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check if form has been modified
         updateResetButtonVisibility();
+        
+        // Update submit button state (disable if no neighborhoods are selected)
+        updateSubmitButtonState();
     }
     
     // Update the hidden input with selected neighborhoods
@@ -411,13 +420,108 @@ document.addEventListener('DOMContentLoaded', function() {
             resetBtn.classList.remove('reset-hidden');
             formModified = true;
         } else {
-            resetBtn.classList.add('reset-hidden');
+            // Even though we're at default state, keep reset button visible
+            // resetBtn.classList.add('reset-hidden');
             formModified = false;
         }
     }
     
-    // Initialize the buttons for bedrooms and bathrooms
+    // Function to check if there are any selected neighborhoods and disable/enable submit button
+    function updateSubmitButtonState() {
+        const submitButton = document.querySelector('.submit-btn');
+        if (selectedNeighborhoodsList.length === 0) {
+            submitButton.disabled = true;
+        } else {
+            submitButton.disabled = false;
+        }
+    }
+    
+    // Initialize the buttons for bedrooms, bathrooms, and prices
     function initializeOptionButtons() {
+        // Min Price buttons
+        const minPriceButtons = document.querySelectorAll('.price-group:first-of-type .option-button');
+        const minPriceInput = document.getElementById('min-price');
+        
+        minPriceButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Check if form was already in default state before this change
+                const wasDefault = !formModified;
+                const value = this.dataset.value;
+                
+                // Update UI - deselect all buttons, then select this one
+                minPriceButtons.forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update hidden input value
+                minPriceInput.value = value;
+                
+                // Ensure min price isn't greater than max price
+                const maxPrice = parseInt(document.getElementById('max-price').value);
+                if (parseInt(value) > maxPrice) {
+                    // Find the appropriate max price button to select
+                    const maxPriceButtons = document.querySelectorAll('.price-group:nth-of-type(2) .option-button');
+                    maxPriceButtons.forEach(btn => btn.classList.remove('selected'));
+                    
+                    // Find the first max price button with a value >= the selected min price
+                    const newMaxBtn = Array.from(maxPriceButtons).find(btn => parseInt(btn.dataset.value) >= parseInt(value));
+                    if (newMaxBtn) {
+                        newMaxBtn.classList.add('selected');
+                        document.getElementById('max-price').value = newMaxBtn.dataset.value;
+                    }
+                }
+                
+                // If form was in default state, check if it's been modified
+                if (wasDefault) {
+                    updateResetButtonVisibility();
+                } else {
+                    // Form was already modified, keep reset button visible
+                    resetBtn.classList.remove('reset-hidden');
+                }
+            });
+        });
+        
+        // Max Price buttons
+        const maxPriceButtons = document.querySelectorAll('.price-group:nth-of-type(2) .option-button');
+        const maxPriceInput = document.getElementById('max-price');
+        
+        maxPriceButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Check if form was already in default state before this change
+                const wasDefault = !formModified;
+                const value = this.dataset.value;
+                
+                // Update UI - deselect all buttons, then select this one
+                maxPriceButtons.forEach(btn => btn.classList.remove('selected'));
+                this.classList.add('selected');
+                
+                // Update hidden input value
+                maxPriceInput.value = value;
+                
+                // Ensure max price isn't less than min price
+                const minPrice = parseInt(document.getElementById('min-price').value);
+                if (parseInt(value) < minPrice) {
+                    // Find the appropriate min price button to select
+                    const minPriceButtons = document.querySelectorAll('.price-group:first-of-type .option-button');
+                    minPriceButtons.forEach(btn => btn.classList.remove('selected'));
+                    
+                    // Find the first min price button with a value <= the selected max price
+                    const newMinBtn = Array.from(minPriceButtons).find(btn => parseInt(btn.dataset.value) <= parseInt(value));
+                    if (newMinBtn) {
+                        newMinBtn.classList.add('selected');
+                        document.getElementById('min-price').value = newMinBtn.dataset.value;
+                    }
+                }
+                
+                // If form was in default state, check if it's been modified
+                if (wasDefault) {
+                    updateResetButtonVisibility();
+                } else {
+                    // Form was already modified, keep reset button visible
+                    resetBtn.classList.remove('reset-hidden');
+                }
+            });
+        });
+        
         // Bedrooms buttons
         const bedroomButtons = document.querySelectorAll('.bedrooms-group .option-button');
         const bedroomsMinInput = document.getElementById('bedrooms-min');
@@ -568,8 +672,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Get reset button element
     const resetBtn = document.getElementById('reset-btn');
     
-    // Initially hide the reset button
-    resetBtn.classList.add('reset-hidden');
+    // Make reset button always visible
+    resetBtn.classList.remove('reset-hidden');
     
     // Handle Reset button click
     resetBtn.addEventListener('click', function() {
@@ -607,17 +711,15 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedNeighborhoods.appendChild(item);
         };
         
-        // Reset neighborhoods
+        // Clear all neighborhoods (including defaults)
         selectedNeighborhoodsList = [];
         selectedNeighborhoods.innerHTML = '';
         
-        // Re-add default neighborhoods
-        DEFAULT_NEIGHBORHOODS.forEach(name => {
-            const neighborhood = allNeighborhoods.find(n => n.name === name);
-            if (neighborhood) {
-                addSelectedNeighborhood(neighborhood);
-            }
-        });
+        // Update hidden input
+        updateSelectedNeighborhoodsInput();
+        
+        // Disable submit button
+        updateSubmitButtonState();
         
         // Reset price inputs
         document.getElementById('min-price').value = DEFAULT_MIN_PRICE;
@@ -647,12 +749,23 @@ document.addEventListener('DOMContentLoaded', function() {
         resultSection.classList.add('result-hidden');
         errorSection.classList.add('error-hidden');
         
-        // Hide reset button
-        resetBtn.classList.add('reset-hidden');
+        // Don't hide reset button - keep it visible
         formModified = false;
         
         // Restore original function
         addSelectedNeighborhood = originalAddSelectedNeighborhood;
+        
+        // Re-populate with default neighborhoods
+        // This will make the submit button enabled again
+        DEFAULT_NEIGHBORHOODS.forEach(name => {
+            const neighborhood = allNeighborhoods.find(n => n.name === name);
+            if (neighborhood) {
+                addSelectedNeighborhood(neighborhood);
+            }
+        });
+        
+        // Ensure submit button is enabled
+        updateSubmitButtonState();
     }
     
     // Handle form submission

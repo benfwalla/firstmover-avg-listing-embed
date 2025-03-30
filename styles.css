@@ -92,21 +92,22 @@ label {
 
 input, select {
   width: 100%;
-  padding: 10px 12px;
+  padding: 7px 10px;
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
-  font-size: 14px;
-  transition: all 0.2s ease;
-  background-color: white;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  font-size: 13px;
+  transition: border-color 0.2s;
+  background-color: var(--light-gray);
 }
 
 input[type="number"] {
   font-weight: 500;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-color);
-  padding-left: 15px;
-  height: 44px;
+  padding: 10px 12px;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  height: 40px;
 }
 
 input:focus, select:focus {
@@ -352,6 +353,16 @@ select[multiple] {
   background-color: #0262c4;
 }
 
+.submit-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.submit-btn:disabled:hover {
+  background-color: #cccccc;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;
@@ -457,106 +468,6 @@ select[multiple] {
 
 .option:hover {
   background-color: var(--light-gray);
-}
-
-/* Modern Modal Styling */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.65);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 2000;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.modal-overlay.active {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal-container {
-  width: 90%;
-  max-width: 450px;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  transform: scale(0.9);
-  transition: transform 0.3s ease;
-  overflow: hidden;
-}
-
-.modal-overlay.active .modal-container {
-  transform: scale(1);
-}
-
-.modal-content {
-  padding: 30px;
-  position: relative;
-}
-
-.modal-close {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  color: #888;
-  transition: color 0.2s ease;
-  line-height: 1;
-  padding: 0;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-}
-
-.modal-close:hover {
-  color: #333;
-}
-
-.result-content {
-  text-align: center;
-  padding: 10px 0 20px;
-}
-
-.result-headline {
-  font-size: 18px;
-  color: #333;
-  margin-bottom: 10px;
-  font-weight: 500;
-}
-
-.result-number {
-  font-size: 50px;
-  font-weight: 700;
-  color: var(--primary-color);
-  line-height: 1.1;
-  margin-bottom: 5px;
-}
-
-.result-unit {
-  font-size: 18px;
-  font-weight: 500;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.result-attribution {
-  font-size: 14px;
-  color: #777;
-  font-weight: 400;
-  font-style: italic;
 }
 
 .option.selected {
