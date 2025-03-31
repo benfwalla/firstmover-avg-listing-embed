@@ -16,10 +16,23 @@ document.addEventListener('DOMContentLoaded', function() {
     const neighborhoodList = document.querySelector('.neighborhood-list');
     const selectedNeighborhoods = document.querySelector('.selected-neighborhoods');
     const selectedNeighborhoodsInput = document.getElementById('selected-neighborhoods-input');
-    const resultSection = document.getElementById('result');
+    const resultModal = document.getElementById('result-modal');
+    const modalBackdrop = document.getElementById('modal-backdrop');
+    const closeButton = document.querySelector('.close-button');
     const avgListingsElement = document.getElementById('avg-listings');
     const loadingSection = document.getElementById('loading');
     const errorSection = document.getElementById('error');
+    
+    // Add event listeners for modal close button and backdrop
+    closeButton.addEventListener('click', function() {
+        resultModal.classList.add('result-hidden');
+        modalBackdrop.classList.add('result-hidden');
+    });
+    
+    modalBackdrop.addEventListener('click', function() {
+        resultModal.classList.add('result-hidden');
+        modalBackdrop.classList.add('result-hidden');
+    });
     
     // State
     let allNeighborhoods = [];
@@ -775,7 +788,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('broker-fees-display').textContent = document.querySelector('#broker-fees-dropdown .option[data-value="' + DEFAULT_BROKER_FEES + '"]').textContent;
         
         // Hide results
-        resultSection.classList.add('result-hidden');
+        resultModal.classList.add('result-hidden');
+        modalBackdrop.classList.add('result-hidden');
         errorSection.classList.add('error-hidden');
         
         // Don't hide reset button - keep it visible
@@ -795,7 +809,8 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show loading
         loadingSection.classList.remove('loading-hidden');
-        resultSection.classList.add('result-hidden');
+        resultModal.classList.add('result-hidden');
+        modalBackdrop.classList.add('result-hidden');
         errorSection.classList.add('error-hidden');
         
         // Get form values
@@ -934,9 +949,10 @@ document.addEventListener('DOMContentLoaded', function() {
                       }
                   }
                   
-                  // Display result
+                  // Display result in modal
                   loadingSection.classList.add('loading-hidden');
-                  resultSection.classList.remove('result-hidden');
+                  resultModal.classList.remove('result-hidden');
+                  modalBackdrop.classList.remove('result-hidden');
                   avgListingsElement.textContent = avgListings.toFixed(1); // Always show with 1 decimal place
               })
               .catch(error => {

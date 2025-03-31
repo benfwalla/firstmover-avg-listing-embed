@@ -88,13 +88,21 @@
             </div>
         </form>
         
-        <div id="result" class="result-hidden">
-            <div class="result-content">
-                <h3>Average Daily Listings</h3>
-                <div id="avg-listings" class="avg-number">--</div>
-                <p>listings per day match your criteria</p>
+        <!-- Modal for results -->
+        <div id="result-modal" class="modal result-hidden">
+            <div class="modal-content">
+                <span class="close-button">&times;</span>
+                <div class="result-content">
+                    <h3>This search gets</h3>
+                    <div id="avg-listings" class="avg-number">--</div>
+                    <div class="result-unit">listings per day</div>
+                    <p class="result-subtitle">According to FirstMover data in < 14 days</p>
+                </div>
             </div>
         </div>
+        
+        <!-- Backdrop -->
+        <div id="modal-backdrop" class="modal-backdrop result-hidden"></div>
         
         <div id="loading" class="loading-hidden">
             <div class="spinner"></div>
