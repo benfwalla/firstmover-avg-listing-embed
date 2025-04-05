@@ -47,20 +47,21 @@ html, body {
 }
 
 .widget-header {
-  padding: 20px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  color: white;
-  text-align: center;
+  text-align: left; /* Align header content to the left */
+  padding: 12px 0 16px; /* Remove horizontal padding, rely on container */
 }
 
-.widget-header h2 {
-  margin-bottom: 5px;
+.widget-title {
+  font-size: 18px;
   font-weight: 600;
+  margin-bottom: 4px;
+  color: var(--text-color);
 }
 
-.widget-header p {
-  opacity: 0.9;
-  font-size: 14px;
+.widget-subtitle {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
 }
 
 form {
@@ -69,6 +70,7 @@ form {
   flex-direction: column;
   height: 100%;
   overflow: auto; /* Allow scrolling within the form if content exceeds container */
+  flex-grow: 1; /* Ensure form takes available space */
 }
 
 .form-group {
@@ -369,12 +371,16 @@ select[multiple] {
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  margin-top: 16px;
-  margin-top: auto; /* Push to the bottom of the container */
-  padding-top: 16px; /* Add some space above the buttons */
+  margin-top: auto;
+  padding-top: 16px;
   position: sticky;
   bottom: 0;
   background-color: white;
+  margin-left: calc(-1 * var(--widget-padding));
+  margin-right: calc(-1 * var(--widget-padding));
+  padding-left: var(--widget-padding);
+  padding-right: var(--widget-padding);
+  padding-bottom: var(--widget-padding);
   z-index: 2;
 }
 
