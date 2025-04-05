@@ -48,7 +48,9 @@ html, body {
 
 .widget-header {
   text-align: left; /* Align header content to the left */
-  padding: 12px 0 16px; /* Remove horizontal padding, rely on container */
+  padding: 0 0 16px; /* Remove top padding, keep bottom padding */
+  /* Optional: Add a subtle bottom border */
+  /* border-bottom: 1px solid var(--border-color); */
 }
 
 .widget-title {
@@ -65,10 +67,11 @@ html, body {
 }
 
 form {
-  padding: 0;
+  padding: 0; /* Remove padding, rely on container and elements */
   display: flex;
   flex-direction: column;
-  height: 100%;
+  /* Remove height: 100% as flex-grow: 1 handles expansion */
+  /* height: 100%; */
   overflow: auto; /* Allow scrolling within the form if content exceeds container */
   flex-grow: 1; /* Ensure form takes available space */
 }
