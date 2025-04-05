@@ -376,10 +376,6 @@ select[multiple] {
   position: sticky;
   bottom: 0;
   background-color: white;
-  margin-left: calc(-1 * var(--widget-padding));
-  margin-right: calc(-1 * var(--widget-padding));
-  padding-left: var(--widget-padding);
-  padding-right: var(--widget-padding);
   padding-bottom: var(--widget-padding);
   z-index: 2;
 }
