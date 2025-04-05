@@ -7,9 +7,10 @@
   --border-color: #e5e5e5;
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   --border-radius: 4px;
+  --widget-padding: 16px;
 }
 
-/* Use more specific selectors to avoid style leakage */
+/* Use more specific selectors to avoid style leakage in iframe context */
 .widget-container, .widget-container * {
   box-sizing: border-box;
   margin: 0;
@@ -19,33 +20,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Use more specific body styling for iframe context */
+/* Optimize body styling for iframe embedding */
 html, body {
   background-color: transparent;
   margin: 0;
   padding: 0;
   height: 100%;
-  overflow-x: hidden;
   width: 100%;
   position: relative;
+  overflow: hidden; /* Prevent scrolling on the iframe document itself */
 }
 
 .widget-container {
   color: var(--text-color);
   line-height: 1.6;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-}
-
-.widget-container {
   width: 100%;
-  max-width: 380px;
-  margin: 0 auto;
+  height: 100%;
   background-color: white;
   border-radius: var(--border-radius);
-  overflow: visible;
-  padding: 16px 12px;
   position: relative;
   z-index: 1; /* Base z-index for the widget */
+  display: flex;
+  flex-direction: column;
+  padding: var(--widget-padding);
 }
 
 .widget-header {
@@ -67,6 +65,10 @@ html, body {
 
 form {
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto; /* Allow scrolling within the form if content exceeds container */
 }
 
 .form-group {
@@ -201,6 +203,7 @@ select[multiple] {
   z-index: 1000; /* Higher z-index to ensure it shows above other iframe content */
   display: none;
   scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
 
 .neighborhood-dropdown.open {
@@ -367,6 +370,12 @@ select[multiple] {
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+  margin-top: auto; /* Push to the bottom of the container */
+  padding-top: 16px; /* Add some space above the buttons */
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  z-index: 2;
 }
 
 #result, #loading, #error {
@@ -388,6 +397,9 @@ select[multiple] {
   width: 360px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   animation: modalEnter 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  /* Ensure modal is contained within the iframe */
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
 @keyframes modalEnter {
@@ -431,6 +443,8 @@ select[multiple] {
   backdrop-filter: blur(3px);
   z-index: 9998;
   animation: backdropFade 0.2s ease;
+  /* Ensure backdrop is contained within the iframe */
+  pointer-events: auto;
 }
 
 @keyframes backdropFade {
