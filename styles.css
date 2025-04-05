@@ -309,10 +309,9 @@ select[multiple] {
   content: attr(data-tooltip);
   position: absolute;
   bottom: 125%;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0; /* Align to left instead of centering */
   width: max-content;
-  max-width: 300px;
+  max-width: 300px; /* Keep max width */
   padding: 8px 12px;
   border-radius: 6px;
   background-color: rgba(0, 0, 0, 0.8);
