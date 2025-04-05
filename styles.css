@@ -28,7 +28,7 @@ html, body {
   height: 100%;
   width: 100%;
   position: relative;
-  overflow: hidden; /* Prevent scrolling on the iframe document itself */
+  overflow-x: hidden; /* Re-add to prevent body overflow */
 }
 
 .widget-container {
@@ -73,7 +73,8 @@ form {
   flex-direction: column;
   /* Remove height: 100% as flex-grow: 1 handles expansion */
   /* height: 100%; */
-  overflow: auto; /* Allow scrolling within the form if content exceeds container */
+  overflow-x: hidden; /* Explicitly hide horizontal overflow */
+  overflow-y: auto;   /* Allow vertical scrolling */
   flex-grow: 1; /* Ensure form takes available space */
 }
 
@@ -264,8 +265,8 @@ select[multiple] {
 .selected-neighborhoods {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
   margin-top: 10px;
+  max-width: 100%; /* Ensure it doesn't exceed parent width */
 }
 
 .selected-item {
@@ -276,6 +277,8 @@ select[multiple] {
   display: flex;
   align-items: center;
   border: 1px solid var(--border-color);
+  margin-right: 5px;
+  margin-bottom: 5px;
 }
 
 .selected-item .remove {
