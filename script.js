@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const DEFAULT_MAX_PRICE = 5000;
     const DEFAULT_BEDROOMS = 'any';
     const DEFAULT_BATHROOMS = 'any';
-    const DEFAULT_BROKER_FEES = 'fees_ok_if_10pct_cheaper';
     
     // Track if form has been modified from default state
     let formModified = false;
@@ -448,11 +447,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         }
         
-        // Check broker fees
-        if (document.getElementById('broker-fees').value !== DEFAULT_BROKER_FEES) {
-            return true;
-        }
-        
         return false;
     }
     
@@ -662,52 +656,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // Broker fees custom select
-        const brokerFeesDisplay = document.getElementById('broker-fees-display');
-        const brokerFeesDropdown = document.getElementById('broker-fees-dropdown');
-        const brokerFeesInput = document.getElementById('broker-fees');
-        const brokerFeesContainer = brokerFeesDisplay.closest('.custom-select');
-        const brokerFeesOptions = brokerFeesDropdown.querySelectorAll('.option');
-        
-        // Toggle dropdown
-        brokerFeesDisplay.addEventListener('click', function() {
-            brokerFeesContainer.classList.toggle('open');
-        });
-        
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.closest('.custom-select')) {
-                brokerFeesContainer.classList.remove('open');
+                // Any custom select dropdowns would be closed here
             }
-        });
-        
-        // Handle option selection
-        brokerFeesOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                // Check if form was already in default state before this change
-                const wasDefault = !formModified;
-                const value = this.dataset.value;
-                const text = this.textContent;
-                
-                // Update display and hidden input
-                brokerFeesDisplay.textContent = text;
-                brokerFeesInput.value = value;
-                
-                // Update selected class
-                brokerFeesOptions.forEach(opt => opt.classList.remove('selected'));
-                this.classList.add('selected');
-                
-                // Close dropdown
-                brokerFeesContainer.classList.remove('open');
-                
-                // If form was in default state, check if it's been modified
-                if (wasDefault) {
-                    updateResetButtonVisibility();
-                } else {
-                    // Form was already modified, keep reset button visible
-                    resetBtn.classList.remove('reset-hidden');
-                }
-            });
         });
     }
     
@@ -780,13 +733,6 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelector('.bathrooms-group .option-button[data-value="any"]').classList.add('selected');
         document.getElementById('min-bathroom').value = DEFAULT_BATHROOMS;
         
-        // Reset broker fees
-        const brokerFeesOptions = document.querySelectorAll('#broker-fees-dropdown .option');
-        brokerFeesOptions.forEach(opt => opt.classList.remove('selected'));
-        document.querySelector('#broker-fees-dropdown .option[data-value="' + DEFAULT_BROKER_FEES + '"]').classList.add('selected');
-        document.getElementById('broker-fees').value = DEFAULT_BROKER_FEES;
-        document.getElementById('broker-fees-display').textContent = document.querySelector('#broker-fees-dropdown .option[data-value="' + DEFAULT_BROKER_FEES + '"]').textContent;
-        
         // Hide results
         resultModal.classList.add('result-hidden');
         modalBackdrop.classList.add('result-hidden');
@@ -820,7 +766,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const bedroomsMin = document.getElementById('bedrooms-min').value;
         const bedroomsMax = document.getElementById('bedrooms-max').value;
         const minBathroom = document.getElementById('min-bathroom').value;
-        const brokerFees = document.getElementById('broker-fees').value;
         
         // Convert bedroom values for API
         let bedrooms = [];
@@ -879,8 +824,7 @@ document.addEventListener('DOMContentLoaded', function() {
             min_price: parseInt(minPrice),
             max_price: parseInt(maxPrice),
             bedrooms: bedrooms,
-            min_bathroom: minBathroomValue,
-            broker_fees: brokerFees
+            min_bathroom: minBathroomValue
         };
         
         // Log request data for debugging
